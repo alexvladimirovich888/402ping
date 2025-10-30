@@ -1,0 +1,832 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>x402-Ping Reputation Layer</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            background: #0d0d0d;
+            color: #f5f5f5;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        html {
+            height: 100%;
+        }
+
+        /* Geometric background pattern */
+        .geometric-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.03;
+            z-index: 0;
+            background-image: 
+                linear-gradient(45deg, #333 25%, transparent 25%), 
+                linear-gradient(-45deg, #333 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #333 75%), 
+                linear-gradient(-45deg, transparent 75%, #333 75%);
+            background-size: 60px 60px;
+            background-position: 0 0, 0 30px, 30px -30px, -30px 0px;
+        }
+
+        /* Floating elements */
+        .floating-element {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #666;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 0.8; }
+        }
+
+        /* Main container */
+        .container {
+            position: relative;
+            z-index: 1;
+            height: 100%;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 3rem;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 0;
+            border-bottom: 1px solid #222;
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 400;
+            color: #f5f5f5;
+            letter-spacing: 2px;
+            position: relative;
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 4px;
+            background: #888;
+            border-radius: 50%;
+            animation: ping 2s ease-in-out infinite;
+        }
+
+        @keyframes ping {
+            0%, 100% { opacity: 1; transform: translateY(-50%) scale(1); }
+            50% { opacity: 0.3; transform: translateY(-50%) scale(1.5); }
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-btn {
+            padding: 0.5rem 0;
+            background: none;
+            border: none;
+            color: #888;
+            text-decoration: none;
+            font-family: inherit;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .nav-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #f5f5f5;
+            transition: width 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            color: #f5f5f5;
+        }
+
+        .nav-btn:hover::after {
+            width: 100%;
+        }
+
+        /* Main content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            padding: 3rem 0;
+            align-items: center;
+        }
+
+        .hero-left {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .hero-title {
+            font-size: 2.8rem;
+            font-weight: 300;
+            line-height: 1.1;
+            margin: 0;
+            letter-spacing: -1px;
+        }
+
+        .hero-subtitle {
+            font-size: 1rem;
+            color: #888;
+            line-height: 1.6;
+            margin: 0;
+            max-width: 400px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: 1px solid #333;
+            background: none;
+            color: #f5f5f5;
+            font-family: inherit;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: #f5f5f5;
+            transition: left 0.3s ease;
+            z-index: -1;
+        }
+
+        .btn:hover::before {
+            left: 0;
+        }
+
+        .btn:hover {
+            color: #0d0d0d;
+            border-color: #f5f5f5;
+        }
+
+        .btn-secondary {
+            border-color: #555;
+            color: #888;
+        }
+
+        .btn-secondary:hover {
+            color: #0d0d0d;
+            border-color: #888;
+        }
+
+        .btn-secondary::before {
+            background: #888;
+        }
+
+        /* Right side content */
+        .hero-right {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .metric-card {
+            border: 1px solid #222;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 300;
+            color: #f5f5f5;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .chains-list {
+            border: 1px solid #222;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .chains-title {
+            font-size: 0.8rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+        }
+
+        .chains-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .chain-tag {
+            padding: 0.3rem 0.8rem;
+            border: 1px solid #333;
+            font-size: 0.8rem;
+            color: #888;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Navigation tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 0;
+            margin: 2rem 0;
+            border: 1px solid #222;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 1rem;
+            background: none;
+            border: none;
+            color: #666;
+            font-family: inherit;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-right: 1px solid #222;
+        }
+
+        .nav-tab:last-child {
+            border-right: none;
+        }
+
+        .nav-tab:hover,
+        .nav-tab.active {
+            background: rgba(255, 255, 255, 0.05);
+            color: #f5f5f5;
+        }
+
+        /* Info section */
+        .info-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 3rem;
+            margin: 2rem 0;
+        }
+
+        .info-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .info-card {
+            border-left: 2px solid #333;
+            padding: 1.5rem 0 1.5rem 2rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .info-card:hover {
+            border-left-color: #666;
+        }
+
+        .info-card h3 {
+            font-size: 1.1rem;
+            font-weight: 400;
+            margin: 0 0 0.8rem 0;
+            color: #f5f5f5;
+        }
+
+        .info-card p {
+            font-size: 0.9rem;
+            color: #888;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* Dashboard */
+        .dashboard {
+            border: 1px solid #222;
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .dashboard-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #222;
+            font-size: 0.8rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .agent-list {
+            padding: 0;
+        }
+
+        .agent-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #1a1a1a;
+            transition: background 0.3s ease;
+        }
+
+        .agent-item:last-child {
+            border-bottom: none;
+        }
+
+        .agent-item:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .agent-name {
+            font-size: 0.9rem;
+            color: #f5f5f5;
+        }
+
+        .agent-score {
+            font-size: 0.9rem;
+            color: #888;
+            font-weight: 300;
+        }
+
+        .ecosystem-section {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            border-top: 1px solid #222;
+        }
+
+        .ecosystem-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+        }
+
+        .ecosystem-item {
+            aspect-ratio: 1;
+            border: 1px solid #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #666;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .ecosystem-item:hover {
+            border-color: #444;
+            color: #888;
+        }
+
+        /* Footer */
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 0;
+            border-top: 1px solid #222;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .footer-link {
+            color: #666;
+            text-decoration: none;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: #888;
+        }
+
+        .footer-tagline {
+            font-size: 0.8rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1.5rem;
+            }
+            
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .hero-title {
+                font-size: 2.2rem;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .info-section {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
+            
+            .nav-tab {
+                flex: none;
+                min-width: 120px;
+            }
+            
+            .footer {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .ecosystem-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body>
+  <main><!-- Geometric background -->
+   <div class="geometric-bg"></div>
+   <div id="floatingElements"></div>
+   <div class="container"><!-- Header -->
+    <header class="header">
+     <div class="logo" id="logoText">
+      x402-ping
+     </div>
+     <nav class="nav-buttons"><a href="https://x402.org" target="_blank" rel="noopener noreferrer" class="nav-btn">x402.org</a> <a href="https://etherscan.io" target="_blank" rel="noopener noreferrer" class="nav-btn">etherscan</a>
+     </nav>
+    </header><!-- Main content -->
+    <section class="main-content">
+     <div class="hero-left">
+      <h1 class="hero-title" id="mainHeadline">Trust Between Machines — Verified by Payments.</h1>
+      <p class="hero-subtitle" id="heroSubtext">Every transaction made through the x402 protocol emits a cryptographic Ping-Signature — proof of payment, proof of reputation.</p>
+      <div class="hero-buttons"><button class="btn">Connect Wallet</button> <button class="btn btn-secondary">Try Demo</button>
+      </div>
+     </div>
+     <div class="hero-right">
+      <div class="metrics-grid">
+       <div class="metric-card"><span class="metric-value" id="pingSignatures">42,310,828</span>
+        <div class="metric-label">
+         Ping-Signatures
+        </div>
+       </div>
+       <div class="metric-card"><span class="metric-value" id="connectedAgents">18,240</span>
+        <div class="metric-label">
+         Connected Agents
+        </div>
+       </div>
+      </div>
+      <div class="chains-list">
+       <div class="chains-title">
+        Supported Networks
+       </div>
+       <div class="chains-items" id="supportedChainsContainer"><span class="chain-tag">Ethereum</span> <span class="chain-tag">Base</span> <span class="chain-tag">Solana</span> <span class="chain-tag">Arbitrum</span>
+       </div>
+      </div>
+     </div>
+    </section><!-- Navigation tabs -->
+    <nav class="nav-tabs"><button class="nav-tab active">Overview</button> <button class="nav-tab">Documentation</button> <button class="nav-tab">Integrations</button> <button class="nav-tab">API Reference</button> <button class="nav-tab">Explorer</button>
+    </nav><!-- Info section -->
+    <section class="info-section">
+     <div class="info-cards">
+      <div class="info-card">
+       <h3>Ping = Proof</h3>
+       <p>Each x402 payment automatically generates a signed Ping-Proof stored on-chain. Use it to verify real payment activity.</p>
+      </div>
+      <div class="info-card">
+       <h3>Reputation API</h3>
+       <p>Integrate Ping-scores into apps like Lens Protocol, Farcaster, or XMTP to show on-chain credibility.</p>
+      </div>
+      <div class="info-card">
+       <h3>Credit History for Agents</h3>
+       <p>Autonomous bots and AI services build trust over time using Ping-records — verifiable on The Graph or Dune Analytics.</p>
+      </div>
+     </div>
+     <div class="dashboard">
+      <div class="dashboard-header">
+       Top Trusted Agents
+      </div>
+      <div class="agent-list">
+       <div class="agent-item"><span class="agent-name">OpenAI-Bot</span> <span class="agent-score">97.8</span>
+       </div>
+       <div class="agent-item"><span class="agent-name">Chainlink-Oracle</span> <span class="agent-score">94.5</span>
+       </div>
+       <div class="agent-item"><span class="agent-name">Uniswap-API</span> <span class="agent-score">91.2</span>
+       </div>
+      </div>
+      <div class="ecosystem-section">
+       <div class="ecosystem-grid">
+        <div class="ecosystem-item">
+         CL
+        </div>
+        <div class="ecosystem-item">
+         AAVE
+        </div>
+        <div class="ecosystem-item">
+         ARB
+        </div>
+        <div class="ecosystem-item">
+         ENS
+        </div>
+        <div class="ecosystem-item">
+         AI
+        </div>
+       </div>
+      </div>
+     </div>
+    </section><!-- Footer -->
+    <footer class="footer">
+     <div class="footer-links"><a href="https://x402.org" target="_blank" rel="noopener noreferrer" class="footer-link">x402.org</a> <a href="#" class="footer-link">ping explorer</a> <a href="#" class="footer-link">github</a> <a href="https://etherscan.io" target="_blank" rel="noopener noreferrer" class="footer-link">etherscan</a> <a href="#" class="footer-link">privacy</a>
+     </div>
+     <div class="footer-tagline" id="footerTagline">
+      ping once. prove forever.
+     </div>
+    </footer>
+   </div>
+  </main>
+  <script>
+        // Configuration object
+        const defaultConfig = {
+            logo_text: "x402-ping",
+            main_headline: "Trust Between Machines — Verified by Payments.",
+            hero_subtext: "Every transaction made through the x402 protocol emits a cryptographic Ping-Signature — proof of payment, proof of reputation.",
+            ping_signatures: "42,310,828",
+            connected_agents: "18,240",
+            supported_chains: "Ethereum, Base, Solana, Arbitrum",
+            footer_tagline: "ping once. prove forever.",
+            background_color: "#0d0d0d",
+            surface_color: "#1a1a1a",
+            text_color: "#f5f5f5",
+            accent_color: "#888888",
+            border_color: "#222222",
+            font_family: "SF Mono",
+            font_size: 16
+        };
+
+        // Create floating elements
+        function createFloatingElements() {
+            const container = document.getElementById('floatingElements');
+            for (let i = 0; i < 15; i++) {
+                const element = document.createElement('div');
+                element.className = 'floating-element';
+                element.style.left = Math.random() * 100 + '%';
+                element.style.top = Math.random() * 100 + '%';
+                element.style.animationDelay = Math.random() * 8 + 's';
+                container.appendChild(element);
+            }
+        }
+
+        // Initialize navigation tabs
+        function initNavTabs() {
+            const tabs = document.querySelectorAll('.nav-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                });
+            });
+        }
+
+        // Initialize buttons
+        function initButtons() {
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const originalText = button.textContent;
+                    button.textContent = 'Processing...';
+                    button.style.pointerEvents = 'none';
+                    
+                    setTimeout(() => {
+                        button.textContent = originalText === 'Connect Wallet' ? 'Connected' : 'Demo Ready';
+                        button.style.pointerEvents = 'auto';
+                    }, 1500);
+                });
+            });
+        }
+
+        // Element SDK configuration
+        async function onConfigChange(config) {
+            const logoElement = document.getElementById('logoText');
+            const headlineElement = document.getElementById('mainHeadline');
+            const subtextElement = document.getElementById('heroSubtext');
+            const pingSignaturesElement = document.getElementById('pingSignatures');
+            const connectedAgentsElement = document.getElementById('connectedAgents');
+            const footerTaglineElement = document.getElementById('footerTagline');
+
+            // Update text content
+            if (logoElement) logoElement.textContent = config.logo_text || defaultConfig.logo_text;
+            if (headlineElement) headlineElement.textContent = config.main_headline || defaultConfig.main_headline;
+            if (subtextElement) subtextElement.textContent = config.hero_subtext || defaultConfig.hero_subtext;
+            if (pingSignaturesElement) pingSignaturesElement.textContent = config.ping_signatures || defaultConfig.ping_signatures;
+            if (connectedAgentsElement) connectedAgentsElement.textContent = config.connected_agents || defaultConfig.connected_agents;
+            if (footerTaglineElement) footerTaglineElement.textContent = config.footer_tagline || defaultConfig.footer_tagline;
+
+            // Update supported chains
+            const supportedChainsContainer = document.getElementById('supportedChainsContainer');
+            if (supportedChainsContainer && config.supported_chains) {
+                const chains = config.supported_chains.split(', ');
+                supportedChainsContainer.innerHTML = chains.map(chain => 
+                    `<span class="chain-tag">${chain.trim()}</span>`
+                ).join('');
+            }
+
+            // Update colors
+            const backgroundColor = config.background_color || defaultConfig.background_color;
+            const surfaceColor = config.surface_color || defaultConfig.surface_color;
+            const textColor = config.text_color || defaultConfig.text_color;
+            const accentColor = config.accent_color || defaultConfig.accent_color;
+            const borderColor = config.border_color || defaultConfig.border_color;
+
+            document.body.style.backgroundColor = backgroundColor;
+            document.body.style.color = textColor;
+
+            // Update font
+            const customFont = config.font_family || defaultConfig.font_family;
+            const baseSize = config.font_size || defaultConfig.font_size;
+            const fontStack = `${customFont}, Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace`;
+            
+            document.body.style.fontFamily = fontStack;
+            document.body.style.fontSize = `${baseSize}px`;
+
+            // Scale text proportionally
+            const heroTitle = document.querySelector('.hero-title');
+            const heroSubtitle = document.querySelector('.hero-subtitle');
+            const metricValues = document.querySelectorAll('.metric-value');
+            
+            if (heroTitle) heroTitle.style.fontSize = `${baseSize * 1.75}px`;
+            if (heroSubtitle) heroSubtitle.style.fontSize = `${baseSize}px`;
+            metricValues.forEach(el => el.style.fontSize = `${baseSize * 1.125}px`);
+        }
+
+        function mapToCapabilities(config) {
+            return {
+                recolorables: [
+                    {
+                        get: () => config.background_color || defaultConfig.background_color,
+                        set: (value) => {
+                            config.background_color = value;
+                            if (window.elementSdk) {
+                                window.elementSdk.setConfig({ background_color: value });
+                            }
+                        }
+                    },
+                    {
+                        get: () => config.surface_color || defaultConfig.surface_color,
+                        set: (value) => {
+                            config.surface_color = value;
+                            if (window.elementSdk) {
+                                window.elementSdk.setConfig({ surface_color: value });
+                            }
+                        }
+                    },
+                    {
+                        get: () => config.text_color || defaultConfig.text_color,
+                        set: (value) => {
+                            config.text_color = value;
+                            if (window.elementSdk) {
+                                window.elementSdk.setConfig({ text_color: value });
+                            }
+                        }
+                    },
+                    {
+                        get: () => config.accent_color || defaultConfig.accent_color,
+                        set: (value) => {
+                            config.accent_color = value;
+                            if (window.elementSdk) {
+                                window.elementSdk.setConfig({ accent_color: value });
+                            }
+                        }
+                    },
+                    {
+                        get: () => config.border_color || defaultConfig.border_color,
+                        set: (value) => {
+                            config.border_color = value;
+                            if (window.elementSdk) {
+                                window.elementSdk.setConfig({ border_color: value });
+                            }
+                        }
+                    }
+                ],
+                borderables: [],
+                fontEditable: {
+                    get: () => config.font_family || defaultConfig.font_family,
+                    set: (value) => {
+                        config.font_family = value;
+                        if (window.elementSdk) {
+                            window.elementSdk.setConfig({ font_family: value });
+                        }
+                    }
+                },
+                fontSizeable: {
+                    get: () => config.font_size || defaultConfig.font_size,
+                    set: (value) => {
+                        config.font_size = value;
+                        if (window.elementSdk) {
+                            window.elementSdk.setConfig({ font_size: value });
+                        }
+                    }
+                }
+            };
+        }
+
+        function mapToEditPanelValues(config) {
+            return new Map([
+                ["logo_text", config.logo_text || defaultConfig.logo_text],
+                ["main_headline", config.main_headline || defaultConfig.main_headline],
+                ["hero_subtext", config.hero_subtext || defaultConfig.hero_subtext],
+                ["ping_signatures", config.ping_signatures || defaultConfig.ping_signatures],
+                ["connected_agents", config.connected_agents || defaultConfig.connected_agents],
+                ["supported_chains", config.supported_chains || defaultConfig.supported_chains],
+                ["footer_tagline", config.footer_tagline || defaultConfig.footer_tagline]
+            ]);
+        }
+
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', () => {
+            createFloatingElements();
+            initNavTabs();
+            initButtons();
+
+            // Initialize Element SDK
+            if (window.elementSdk) {
+                window.elementSdk.init({
+                    defaultConfig,
+                    onConfigChange,
+                    mapToCapabilities,
+                    mapToEditPanelValues
+                });
+            }
+        });
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'996b7399d439c23e',t:'MTc2MTgzMjk1OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
